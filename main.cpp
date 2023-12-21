@@ -1,41 +1,74 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QDebug>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QApplication>
 
 int main(int argc, char *argv[]) {
-    QCoreApplication a(argc, argv);
+    QApplication app(argc, argv);
 
-    bool mediaPlayerClicked = true;
+    QWidget window;
+    window.setWindowTitle("Service Control App");
 
-    if (mediaPlayerClicked) {
-        // Start the agl-app@mediaplayer.service
-        QProcess mediaPlayerProcess;
-        mediaPlayerProcess.start("systemctl", QStringList() << "start" << "agl-app@mediaplayer.service");
+    QVBoxLayout layout(&window);
 
-        if (mediaPlayerProcess.waitForStarted() && mediaPlayerProcess.waitForFinished()) {
-            if (mediaPlayerProcess.exitCode() == 0) {
-                qDebug() << "mediaplayer service started successfully.";
-            } else {
-                qDebug() << "Error: mediaplayer Process exited with code " << mediaPlayerProcess.exitCode();
-            }
-        } else {
-            qDebug() << "Error:" << mediaPlayerProcess.errorString();
-        }
+    QPushButton mediaPlayerButton("MediaPlayer");
+    QPushButton settingsButton("Settings");
 
-        // Start the agl-app@settings.service
-        QProcess settingsProcess;
-        settingsProcess.start("systemctl", QStringList() << "start" << "agl-app@settings.service");
+    layout.addWidget(&mediaPlayerButton);
+    layout.addWidget(&settingsButton);
 
-        if (settingsProcess.waitForStarted() && settingsProcess.waitForFinished()) {
-            if (settingsProcess.exitCode() == 0) {
-                qDebug() << "settings service started successfully.";
-            } else {
-                qDebug() << "Error: settings Process exited with code " << settingsProcess.exitCode();
-            }
-        } else {
-            qDebug() << "Error:" << settingsProcess.errorString();
-        }
-    }
+    QProcess systemctlProcess;
 
-    return a.exec();
+    // Connect the buttons to start the corresponding services
+    QObject::connect(&mediaPlayerButton, &QPushButton::clicked, [&systemctlProcess](){
+        systemctlProcess.start("systemctl", QStringList() << "start" << "agl-app@mediaplayer.service");
+        systemctlProcess.waitForStarted();
+        systemctlProcess.waitForFinished();
+    });
+
+    QObject::connect(&settingsButton, &QPushButton::clicked, [&systemctlProcess](){
+        systemctlProcess.start("systemctl", QStringList() << "start" << "agl-app@settings.service");
+        systemctlProcess.waitForStarted();
+        systemctlProcess.waitForFinished();
+    });
+
+    window.show();
+
+    return app.exec();
 }
+
+
+//int main(int argc, char *argv[]) {
+//    QCoreApplication a(argc, argv);
+
+//    //ls  code
+
+//    QProcess lsProcess;
+//    lsProcess.setWorkingDirectory("/home/srg-sarthak");
+//    lsProcess.start("ls", QStringList() << "-l");
+
+//    if (lsProcess.waitForStarted() && lsProcess.waitForFinished()) {
+//        if (lsProcess.exitCode() == 0) {
+//            QByteArray lsResult = lsProcess.readAllStandardOutput();
+
+//            QStringList lsLines = QString(lsResult).split("\n", QString::SkipEmptyParts);
+
+//            qDebug() << "File List:";
+//            for (const QString& line : lsLines) {
+//                QStringList parts = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+//                if (parts.size() >= 9) {
+//                    QString permissions = parts[0];
+//                    QString size = parts[4];
+//                    QString fileName = parts[parts.size() - 1];
+//                    qDebug() << "Permissions:" << permissions << "Size:" << size << "File:" << fileName;
+//                }
+//            }
+//        } else {
+//            qDebug() << "Error: ls Process exited with code " << lsProcess.exitCode();
+//        }
+//    } else {
+//        qDebug() << "Error:" << lsProcess.errorString();
+//    }
+//}
